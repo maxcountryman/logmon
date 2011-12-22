@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Flask Logger</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    </head>
+    <body>
+        <h1 class="title-text">Flask Logger</h1>
+        <div class="page">
+            <div class="page-container">
+                <div id="status" class="red">Disconnected</div>
+                <div id="data"></div>
+            </div>
+        </div>
+    </body>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+<script type="text/javascript" src="http://localhost:8080/application.js"></script>
+<script type=text/javascript>
+    var jug = new Juggernaut();
+    var $data = $('#data')
+    jug.subscribe('logger', function(data) {
+        $data.append('<p>' + data + '</p>');
+        $data.scrollTop($data[0].scrollHeight);
+    });
+
+    var $status = $('#status')
+    jug.on('connect', function(){
+        $status.removeClass('red');
+        $status.text('Connected');
+        $status.addClass('green');
+    });
+
+    // always align the scrollbar to the bottom of the data div
+    $data.scrollTop($data[0].scrollHeight);
+</script>
+</html>
