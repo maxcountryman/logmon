@@ -1,5 +1,5 @@
 if __name__ == '__main__': 
-    from logger import app
+    from logmon import app
     
     from juggernaut import Juggernaut
     
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     monkey.patch_all()
     jug = Juggernaut()
     
-    LOG_FILE = '/var/log/system.log'
+    LOG_FILE = app.config['LOG_FILE']
     
     
     def follow(follow_file):
