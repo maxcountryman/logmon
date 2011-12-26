@@ -1,6 +1,7 @@
 if __name__ == '__main__': 
     from logmon import app
     
+    from flask import escape
     from juggernaut import Juggernaut
     
     import gevent
@@ -23,6 +24,7 @@ if __name__ == '__main__':
             if not line:
                 time.sleep(0.1)
                 continue
+            line = escape(line)
             jug.publish('logger', line)
     
     
