@@ -25,7 +25,7 @@
     var jug = new Juggernaut();
     var $data = $('#data')
     jug.subscribe('logger', function(data) {
-        $data.append('<p>' +  $('<div/>').text(data).html() + '</p>');
+        $data.append($('<p/>').text(data));
         $data.scrollTop($data[0].scrollHeight);
     });
 
