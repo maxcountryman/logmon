@@ -71,62 +71,61 @@ The rewrite should look something like this, although depending on your
 situation you may find this needs to be modified:
 
     if __name__ == '__main__':
-            from logmon import app
+        from logmon import app
+        
+        from flask import escape
+        from juggernaut import Juggernaut
+        
+        import gevent
+        from gevent import monkey
+        from gevent.wsgi import WSGIServer
+        from werkzeug.contrib.fixers import ProxyFix
+        
+        import os
+        import time
+        import signal
+        
+        monkey.patch_all()
+        jug = Juggernaut()
+        f = None
+        
+        LOG_FILE = app.config['LOG_FILE']
+        
+        
+        def write_pid(filepath='/tmp/{}.pid'):
+            with open(filepath.format(app.config['SITE_NAME']), 'w') as f:
+                pid = str(os.getpid())
+                f.write(pid)
+        
+        
+        def follow(filepath):
+            global f
+            f = open(filepath)
+            f.seek(0, 2)
             
-            from flask import escape
-            from juggernaut import Juggernaut
-            
-            import gevent
-            from gevent import monkey
-            from gevent.wsgi import WSGIServer
-            from werkzeug.contrib.fixers import ProxyFix
-            
-            import os
-            import time
-            import signal
-            
-            monkey.patch_all()
-            jug = Juggernaut()
-            f = None
-            
-            LOG_FILE = app.config['LOG_FILE']
-            
-            
-            def write_pid(filepath='/tmp/{}.pid'):
-                with open(filepath.format(app.config['SITE_NAME']), 'w') as f:
-                    pid = str(os.getpid())
-                    f.write(pid)
-            
-            
-            def follow(filepath):
+            def rotate_handler():
                 global f
+                f.close()
                 f = open(filepath)
-                f.seek(0, 2)
-                
-                def rotate_handler():
-                    global f
-                    f.close()
-                    f = open(filepath)
-                
-                # bind to SIGHUP
-                gevent.signal(signal.SIGHUP, rotate_handler)
-                
-                while True:
-                    line = f.readline()
-                    if not line:
-                        time.sleep(0.1)
-                        continue
-                    line = escape(line)
-                    jug.publish('logger', line)
             
+            # bind to SIGHUP
+            gevent.signal(signal.SIGHUP, rotate_handler)
             
-            # write the PID to a file
-            write_pid()
-            
-            # fixes the X-Real-IP header
-            app.wsgi_app = ProxyFix(app.wsgi_app)
-            http_server = WSGIServer(('127.0.0.1', 5051), app)
-            jobs = [gevent.spawn(follow, LOG_FILE),
-                    gevent.spawn(http_server.serve_forever)]
-            gevent.joinall(jobs)
-
+            while True:
+                line = f.readline()
+                if not line:
+                    time.sleep(0.1)
+                    continue
+                line = escape(line)
+                jug.publish('logger', line)
+        
+        
+        # write the PID to a file
+        write_pid()
+        
+        # fixes the X-Real-IP header
+        app.wsgi_app = ProxyFix(app.wsgi_app)
+        http_server = WSGIServer(('127.0.0.1', 5051), app)
+        jobs = [gevent.spawn(follow, LOG_FILE),
+                gevent.spawn(http_server.serve_forever)]
+        gevent.joinall(jobs)
